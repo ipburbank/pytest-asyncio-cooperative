@@ -502,3 +502,30 @@ def test_shared_fixture_caching(testdir, scope, def_, ret, fail):
         # https://github.com/willemt/pytest-asyncio-cooperative/issues/42
     else:
         result.assert_outcomes(passed=2)
+
+def test_fixture_shared_with_synchronous_test(testdir):
+    testdir.makepyfile(
+        """
+        import asyncio
+        import pytest
+
+
+        @pytest.fixture(scope="session")
+        def my_fixture():
+            yield "YYY"
+
+
+        @pytest.mark.asyncio_cooperative
+        async def test_a(my_fixture):
+            await asyncio.sleep(2)
+            assert my_fixture == "YYY"
+
+
+        def test_b(my_fixture):
+            assert my_fixture == "YYY"
+    """
+    )
+
+    result = testdir.runpytest()
+
+    result.assert_outcomes(passed=1)
